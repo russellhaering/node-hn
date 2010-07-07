@@ -1,0 +1,25 @@
+This is a Node.js application that functions as an HTTP API to Hacker News
+(news.ycombinator.com). This project is in no way affiliated with Hacker News,
+and is likely to break should the Hacker News layout change in any way.
+
+To use this application you will need to do the following:
+
+1. git submodule init
+2. git submodule update
+3. node hn.js
+
+You can now query the API at http://localhost:8124
+
+The response will be a list of JSON objects of the following form:
+
+{
+    "headline":     "Drowning Doesn't Look Like Drowning",
+    "url":          "http://mariovittone.com/2010/05/154/",
+    "score":        "283",
+    "submitter":    "msg",
+    "comments":     "89",
+    "age":          "9 hours ago"
+}
+
+Currently the list will reflect the 30 articles listed on the front page of
+Hacker News, but I plan to add support for other lists as well.

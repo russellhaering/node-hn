@@ -1,0 +1,3 @@
+[submodule "lib/node-htmlparser"]
+	path = lib/node-htmlparser
+	url = http://github.com/tautologistics/node-htmlparser.git
