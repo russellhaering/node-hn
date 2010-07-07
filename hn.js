@@ -37,15 +37,16 @@ http.createServer(function (req, res) {
 
             // Each article takes 3 rows, and the last two rows aren't affiliated with articles
             for (var i = 0; i < (rows.length - 2)/3; i++) {
-                var article = {};
-                
                 // Parse out various article details
-                article['headline'] = rows[i*3]['children'][2]['children'][0]['children'][0]['data'];
-                article['url'] = rows[i*3]['children'][2]['children'][0]['attribs']['href'];
-                article['score'] = rows[i*3 + 1]['children'][1]['children'][0]['children'][0]['data'].split(' ')[0];
-                article['submitter'] = rows[i*3 + 1]['children'][1]['children'][2]['attribs']['href'].split('=')[1];
-                article['comments'] =  rows[i*3 + 1]['children'][1]['children'][4]['children'][0]['data'].split(' ')[0];
-                article['age'] = rows[i*3 + 1]['children'][1]['children'][3]['data'].split(' |')[0].replace(/^\s*|\s*$/g, "");
+                var article = {
+                    'id':           rows[i*3 + 1]['children'][1]['children'][4]['attribs']['href'].split('=')[1],
+                    'headline':     rows[i*3]['children'][2]['children'][0]['children'][0]['data'],
+                    'url':          rows[i*3]['children'][2]['children'][0]['attribs']['href'],
+                    'score':        rows[i*3 + 1]['children'][1]['children'][0]['children'][0]['data'].split(' ')[0],
+                    'submitter':    rows[i*3 + 1]['children'][1]['children'][2]['attribs']['href'].split('=')[1],
+                    'comments':     rows[i*3 + 1]['children'][1]['children'][4]['children'][0]['data'].split(' ')[0],
+                    'age':          rows[i*3 + 1]['children'][1]['children'][3]['data'].split(' |')[0].replace(/^\s*|\s*$/g, ""),
+                };
 
                 if (article['comments'] == 'discuss') {
                     article['comments'] = '0';

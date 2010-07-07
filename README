@@ -13,6 +13,7 @@ You can now query the API at http://localhost:8124
 The response will be a list of JSON objects of the following form:
 
 {
+    "id":           "1492835",
     "headline":     "Drowning Doesn't Look Like Drowning",
     "url":          "http://mariovittone.com/2010/05/154/",
     "score":        "283",
