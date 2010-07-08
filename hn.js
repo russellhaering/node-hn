@@ -6,10 +6,10 @@ obtaining a copy of this software and associated documentation files (the
 limitation the rights to use, copy, modify, merge, publish, distribute,
 sublicense, and/or sell copies of the Software, and to permit persons to whom
 the Software is furnished to do so, subject to the following conditions:
- 
+
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
- 
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -43,7 +43,58 @@ function getBest(req, res) {
 }
 
 function getItem(req, res) {
-    res.end();
+    var id = url.parse(req.url, true)['query']['id'];
+    var hn = http.createClient(80, "news.ycombinator.com");
+    var request = hn.request("GET", "/item?id=" + id, {
+        'host': 'news.ycombinator.com',
+    });
+    request.end();
+    request.addListener("response", function(response) {
+        var body = "";
+        var handler = new htmlparser.DefaultHandler(function (error, dom) {
+            // Grab the table that contains the list of articles
+            var header =   dom[0]['children'][1]['children'][0]['children'][0]['children'][2]['children'][0]['children'][0]['children'];
+            var comments = dom[0]['children'][1]['children'][0]['children'][0]['children'][2]['children'][0]['children'][3]['children'];
+
+            var here = comments[0]['children'][0]['children'][0]['children'][0]['children'][2]['children'][2];
+
+            var article = {
+                'id':           header[1]['children'][1]['children'][4]['attribs']['href'].split('=')[1],
+                'headline':     header[0]['children'][1]['children'][0]['children'][0]['data'],
+                'url':          header[0]['children'][1]['children'][0]['attribs']['href'],
+                'score':        header[1]['children'][1]['children'][0]['children'][0]['data'].split(' ')[0],
+                'submitter':    header[1]['children'][1]['children'][2]['attribs']['href'].split('=')[1],
+                'comments':     header[1]['children'][1]['children'][4]['children'][0]['data'].split(' ')[0],
+                'age':          header[1]['children'][1]['children'][3]['data'].split(' |')[0].replace(/^\s*|\s*$/g, ""),
+                'children':     [],
+            };
+
+            for (var i = 0; i < comments.length; i++) {
+                var comment = {
+                    'depth':    parseInt(comments[i]['children'][0]['children'][0]['children'][0]['children'][0]['children'][0]['attribs']['width'])/40,
+                    'html':     toHTML(comments[i]['children'][0]['children'][0]['children'][0]['children'][2]['children'][2]),
+                };
+                article['children'][i] = comment;
+            }
+
+            var text = JSON.stringify(article);
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Content-Length': text.length,
+            });
+            res.end(text);
+        }, { ignoreWhitespace: true});
+        var parser = new htmlparser.Parser(handler);
+
+        response.setEncoding("utf8");
+        response.addListener("data", function(chunk) {
+            parser.parseChunk(chunk);
+        });
+
+        response.addListener("end", function() {
+            parser.done();
+        });
+    });
 };
 
 function getList(req, res, path) {
@@ -92,8 +143,8 @@ function getList(req, res, path) {
         response.setEncoding("utf8");
         response.addListener("data", function(chunk) {
             parser.parseChunk(chunk);
-        }); 
-        
+        });
+
         response.addListener("end", function() {
             parser.done();
         });
@@ -101,9 +152,30 @@ function getList(req, res, path) {
 };
 
 http.createServer(function (req, res) {
-    var pathname = url.parse(req.url, true)['pathname'];
+    var pathname = url.parse(req.url)['pathname'];
     var method = routes[pathname];
     if (method != undefined) {
         method(req, res);
     }
 }).listen(8124, "127.0.0.1");
+
+
+// Sort of a ghetto way to turn a comment back into HTML
+function toHTML(node) {
+    var HTML = "";
+    if (node['type'] == 'tag') {
+        HTML += "<" + node['raw'] + ">";
+        if (node['children'] != undefined) {
+            for (var i = 0; i < node['children'].length; i++) {
+                HTML += toHTML(node['children'][i]);
+            }
+        }
+        if (node['name'] != 'p') {
+            HTML += "</" + node['name'] + ">";
+        }
+    }
+    else if (node['type'] == 'text') {
+        HTML += node['raw'];
+    }
+    return HTML;
+}
