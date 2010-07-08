@@ -21,10 +21,34 @@ IN THE SOFTWARE.
 
 var http = require('http');
 var htmlparser = require("./lib/node-htmlparser/node-htmlparser");
+var url = require('url');
 
-http.createServer(function (req, res) {
+var routes = {
+    '/':        getNews,
+    '/newest':  getNewest,
+    '/best':    getBest,
+    '/item':    getItem,
+};
+
+function getNews(req, res) {
+    getList(req, res, '/');
+};
+
+function getNewest(req, res) {
+    getList(req, res, '/newest');
+};
+
+function getBest(req, res) {
+    getList(req, res, '/best');
+}
+
+function getItem(req, res) {
+    res.end();
+};
+
+function getList(req, res, path) {
     var hn = http.createClient(80, "news.ycombinator.com");
-    var request = hn.request("GET", "/", {
+    var request = hn.request("GET", path, {
         'host': 'news.ycombinator.com',
     });
     request.end();
@@ -74,4 +98,12 @@ http.createServer(function (req, res) {
             parser.done();
         });
     });
+};
+
+http.createServer(function (req, res) {
+    var pathname = url.parse(req.url, true)['pathname'];
+    var method = routes[pathname];
+    if (method != undefined) {
+        method(req, res);
+    }
 }).listen(8124, "127.0.0.1");
